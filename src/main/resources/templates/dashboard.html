@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMS Daily Monitoring Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { margin-bottom: 20px; }
+        .table th { background-color: #007bff; color: white; }
+        .last-updated { font-size: 0.9em; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">OMS Daily Monitoring Dashboard</h1>
+        <div class="last-updated text-center" id="lastUpdated">Last updated: Loading...</div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">Order Count (From April)</div>
+                    <div class="card-body">
+                        <table class="table table-striped" id="orderCountTable">
+                            <thead><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">HMTR Orders (Yesterday)</div>
+                    <div class="card-body">
+                        <table class="table table-striped" id="hmtrOrdersTable">
+                            <thead><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-white">Backorder</div>
+                    <div class="card-body">
+                        <p id="backorderSubject"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">Rejected at POS</div>
+                    <div class="card-body">
+                        <p id="rejectedAtPosSubject"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-info text-white">Manual Cancellation</div>
+            <div class="card-body">
+                <table class="table table-striped" id="manualCancellationTable">
+                    <thead><tr><th>Order No</th><th>Entry Type</th><th>Shipment No</th><th>Status</th><th>Status Date</th><th>Description</th><th>User</th><th>Program</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-secondary text-white">Fraud Check Hold Orders</div>
+            <div class="card-body">
+                <table class="table table-striped" id="fraudCheckHoldTable">
+                    <thead><tr><th>Order No</th><th>Create TS</th><th>Status TS</th><th>Description</th><th>Hold Flag</th><th>Currency</th><th>Item ID</th><th>Shipnode</th><th>Req Ship Date</th><th>Reason</th><th>Text 1</th><th>Updated By</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-dark text-white">Stuck Orders (No Holds)</div>
+            <div class="card-body">
+                <table class="table table-striped" id="stuckOrdersTable">
+                    <thead><tr><th>Order No</th><th>Order Name</th><th>Order Date</th><th>Create TS</th><th>Currency</th><th>Description</th><th>Hold Flag</th><th>Item ID</th><th>Shipnode</th><th>Req Ship Date</th><th>Updated By</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-light text-dark">EGC and GC Orders</div>
+            <div class="card-body">
+                <table class="table table-striped" id="egcGcOrdersTable">
+                    <thead><tr><th>Order No</th><th>Item ID</th><th>Create TS</th><th>Description</th><th>Scheduled Date</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function fetchData(endpoint, tableId, isTable = true) {
+            try {
+                const response = await fetch('/api/reports/' + endpoint);
+                const data = await response.json();
+                if (isTable) {
+                    populateTable(tableId, data);
+                } else {
+                    document.getElementById(tableId).textContent = data.subject;
+                }
+            } catch (error) {
+                console.error('Error fetching ' + endpoint, error);
+            }
+        }
+
+        function populateTable(tableId, data) {
+            const tbody = document.querySelector('#' + tableId + ' tbody');
+            tbody.innerHTML = '';
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function fetchAll() {
+            await Promise.all([
+                fetchData('order-count', 'orderCountTable'),
+                fetchData('hmtr-orders', 'hmtrOrdersTable'),
+                fetchData('backorder', 'backorderSubject', false),
+                fetchData('rejected-at-pos', 'rejectedAtPosSubject', false),
+                fetchData('manual-cancellation', 'manualCancellationTable'),
+                fetchData('fraud-check-hold', 'fraudCheckHoldTable'),
+                fetchData('stuck-orders', 'stuckOrdersTable'),
+                fetchData('egc-gc-orders', 'egcGcOrdersTable')
+            ]);
+            document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
+        }
+
+        fetchAll();
+        setInterval(fetchAll, 300000); // 5 minutes
+    </script>
+</body>
+</html>
