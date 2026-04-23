@@ -1,4 +1,4 @@
-﻿package com.example.omsmonitoringdashboard;
+﻿package com.example.omsmonitoringdashboard.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
