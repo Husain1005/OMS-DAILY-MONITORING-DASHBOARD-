@@ -1,10 +1,12 @@
-package com.example.omsmonitoringdashboard.controller;
+﻿package com.example.omsmonitoringdashboard.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Map;
+import com.example.omsmonitoringdashboard.model.OrderCountRowset;
 import com.example.omsmonitoringdashboard.service.OmsService;
 
 @RestController
@@ -55,5 +57,11 @@ public class ReportController {
     @GetMapping("/egc-gc-orders")
     public List<Map<String, Object>> egcGcOrders() {
         return omsService.getEgcGcOrders();
+    }
+
+    @PostMapping("/titan/order-count")
+    @GetMapping("/titan/order-count")
+    public OrderCountRowset titanOrderCount() {
+        return omsService.getTitanOrderCount();
     }
 }

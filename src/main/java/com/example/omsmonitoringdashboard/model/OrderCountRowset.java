@@ -1,0 +1,26 @@
+﻿package com.example.omsmonitoringdashboard.model;
+
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@JacksonXmlRootElement(localName = "ROWSET")
+public class OrderCountRowset {
+
+    @JacksonXmlProperty(localName = "ROW")
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<OrderCountRow> rows = new ArrayList<>();
+
+    public OrderCountRowset(List<OrderCountRow> rows) {
+        this.rows = rows;
+    }
+}
