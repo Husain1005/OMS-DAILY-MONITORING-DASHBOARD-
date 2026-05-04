@@ -1,4 +1,4 @@
-﻿ackage com.example.omsmonitoringdashboard.service;
+﻿package com.example.omsmonitoringdashboard.service;
 
 import com.example.omsmonitoringdashboard.model.OrderCountRow;
 import com.example.omsmonitoringdashboard.model.OrderCountRowset;
