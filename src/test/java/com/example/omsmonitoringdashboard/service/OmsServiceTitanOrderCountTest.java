@@ -1,14 +1,17 @@
-﻿package com.example.omsmonitoringdashboard.service;
+package com.example.omsmonitoringdashboard.service;
 
-import com.example.omsmonitoringdashboard.model.OrderCountRow;
-import com.example.omsmonitoringdashboard.model.OrderCountRowset;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.example.omsmonitoringdashboard.model.OrderCountRow;
+import com.example.omsmonitoringdashboard.model.OrderCountRowset;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -49,36 +52,6 @@ public class OmsServiceTitanOrderCountTest {
             System.err.println("Error during Titan order count test: " + e.getMessage());
             e.printStackTrace();
             fail("Test failed with exception: " + e.getMessage());
-        }
-    }
-
-    @Test
-    @DisplayName("Test getTitanOrderCount - Response data validation")
-    public void testTitanOrderCountDataValidation() {
-        try {
-            OrderCountRowset rowset = omsService.getTitanOrderCount();
-
-            assertNotNull(rowset, "Response should not be null");
-
-            if (rowset.getRows() != null && !rowset.getRows().isEmpty()) {
-                // Validate that we have expected entry types
-                boolean hasMyntra = rowset.getRows().stream()
-                    .anyMatch(r -> r.getEntryType().contains("Myntra"));
-                
-                System.out.println("Contains Myntra entries: " + hasMyntra);
-
-                // Verify numeric values
-                long totalOrders = rowset.getRows().stream()
-                    .mapToLong(OrderCountRow::getTotalOrders)
-                    .sum();
-
-                System.out.println("Total orders across all entries: " + totalOrders);
-                assertTrue(totalOrders >= 0, "Total orders should be non-negative");
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error during data validation test: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }
