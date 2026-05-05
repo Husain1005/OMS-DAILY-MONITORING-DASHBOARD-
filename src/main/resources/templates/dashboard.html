@@ -147,13 +147,19 @@
         async function fetchData(endpoint, tableId, isTable = true) {
             try {
                 const response = await fetch('/api/reports/' + endpoint);
+                if (!response.ok) {
+                    console.error('Error fetching ' + endpoint + ': ' + response.status + ' ' + response.statusText);
+                    return null;
+                }
                 const data = await response.json();
                 if (isTable) {
-                    populateTable(tableId, data);
+                    const rows = Array.isArray(data) ? data : (data?.rows || []);
+                    populateTable(tableId, rows);
+                    return rows;
                 } else {
                     document.getElementById(tableId).textContent = data.subject;
+                    return data;
                 }
-                return data;
             } catch (error) {
                 console.error('Error fetching ' + endpoint, error);
                 return null;
@@ -165,7 +171,25 @@
             tbody.innerHTML = '';
             data.forEach(row => {
                 const tr = document.createElement('tr');
-                Object.values(row).forEach(value => {
+                let values;
+
+                if (tableId === 'orderCountTable') {
+                    values = [
+                        row.shipnodeKey ?? row.shipnode_key ?? '',
+                        row.entryType ?? row.entry_type ?? '',
+                        row.totalOrders ?? row.from_april ?? ''
+                    ];
+                } else if (tableId === 'hmtrOrdersTable') {
+                    values = [
+                        row.shipnodeKey ?? row.shipnode_key ?? '',
+                        row.entryType ?? row.entry_type ?? '',
+                        row.yesterday_count ?? row.totalOrders ?? ''
+                    ];
+                } else {
+                    values = Object.values(row);
+                }
+
+                values.forEach(value => {
                     const td = document.createElement('td');
                     td.textContent = value === null ? '' : value;
                     tr.appendChild(td);
@@ -218,8 +242,8 @@
 
         function renderCharts(orderCountData, hmtrData, fraudData) {
             if (orderCountData) {
-                const shipnodeAgg = buildAggregation(orderCountData, 'shipnode_key', 'from_april');
-                const entryTypeAgg = buildAggregation(orderCountData, 'entry_type', 'from_april');
+                const shipnodeAgg = buildAggregation(orderCountData, 'shipnodeKey', 'totalOrders');
+                const entryTypeAgg = buildAggregation(orderCountData, 'entryType', 'totalOrders');
                 const shipnodeLabels = shipnodeAgg.map(([key]) => key);
                 const shipnodeValues = shipnodeAgg.map(([, value]) => value);
                 const entryTypeLabels = entryTypeAgg.map(([key]) => key);
@@ -246,7 +270,7 @@
 
         async function fetchAll() {
             const [orderCountData, hmtrData, backorderData, rejectedData, manualCancellationData, fraudData, stuckOrdersData, egcGcOrdersData] = await Promise.all([
-                fetchData('order-count', 'orderCountTable'),
+                fetchData('titan/order-count', 'orderCountTable'),
                 fetchData('hmtr-orders', 'hmtrOrdersTable'),
                 fetchData('backorder', 'backorderSubject', false),
                 fetchData('rejected-at-pos', 'rejectedAtPosSubject', false),

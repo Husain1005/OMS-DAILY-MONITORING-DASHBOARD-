@@ -1,0 +1,230 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Maven Clean Compile",
+			"type": "shell",
+			"command": "mvn clean compile",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Maven Clean Compile with Path",
+			"type": "shell",
+			"command": "$env:Path = \"C:\\maven\\apache-maven-3.9.6\\bin;$env:Path\"; $env:JAVA_HOME = \"C:\\Program Files\\Java\\jdk-18.0.2.1\"; $env:Path = \"$env:JAVA_HOME\\bin;$env:Path\"; mvn clean compile",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Clean Maven Compile",
+			"type": "shell",
+			"command": "set JAVA_HOME=C:\\Program Files\\Java\\jdk-18.0.2.1 && set PATH=%JAVA_HOME%\\bin;C:\\maven\\apache-maven-3.9.6\\bin;%PATH% && mvn clean compile",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch",
+			"type": "shell",
+			"command": "run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Create Service File",
+			"type": "shell",
+			"command": "cmd.exe /c create_service.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Create Service File",
+			"type": "shell",
+			"command": "cmd.exe /c \"e:\\Monitoring_Dashboard\\OMS-DAILY-MONITORING-DASHBOARD-\\create_service.bat\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run BOM Cleanup Script",
+			"type": "shell",
+			"command": "cmd.exe /c python c:\\temp\\remove_bom.py",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run Build Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Compile After Controller Fix",
+			"type": "shell",
+			"command": "cmd.exe /c build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Compile Project",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Compile After BOM Fix",
+			"type": "shell",
+			"command": "cmd.exe /c run_build.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run App Batch CMD",
+			"type": "shell",
+			"command": "cmd.exe /c run_app.bat",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
