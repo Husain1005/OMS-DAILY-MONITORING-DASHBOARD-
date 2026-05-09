@@ -46,23 +46,37 @@ public class RestTemplateConfig {
     @Bean
     public RestTemplate restTemplate() throws Exception {
 
-        // Load CLIENT CERTIFICATE (Keystore)
-        KeyStore keyStore = KeyStore.getInstance("JKS"); // or "PKCS12" if .p12
+        System.out.println("========== BUILDING MTLS REST TEMPLATE ==========");
+        System.out.println("Keystore path: " + keystorePath);
+        System.out.println("Truststore path: " + truststorePath);
+
+        // Load CLIENT CERTIFICATE (Keystore) - .jks file = JKS type
+        KeyStore keyStore = KeyStore.getInstance("JKS");
         try (InputStream ksStream = resourceLoader.getResource(keystorePath).getInputStream()) {
             keyStore.load(ksStream, keystorePassword.toCharArray());
         }
+        System.out.println("Keystore loaded successfully. Aliases:");
+        var aliases = keyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            System.out.println("  " + alias + " -> isKeyEntry: " + keyStore.isKeyEntry(alias));
+        }
 
-        // Load TRUSTSTORE (Server cert)
-        KeyStore trustStore = KeyStore.getInstance("JKS");
+        // Load TRUSTSTORE (Server cert) - .p12 file = PKCS12 type
+        KeyStore trustStore = KeyStore.getInstance("PKCS12");
         try (InputStream tsStream = resourceLoader.getResource(truststorePath).getInputStream()) {
             trustStore.load(tsStream, truststorePassword.toCharArray());
         }
+        System.out.println("Truststore loaded successfully. Entries: " + trustStore.size());
 
         // Build SSL Context (mTLS)
         SSLContext sslContext = SSLContexts.custom()
                 .loadKeyMaterial(keyStore, keystorePassword.toCharArray())   // client cert
                 .loadTrustMaterial(trustStore, null)                         // trust server
                 .build();
+
+        System.out.println("SSLContext protocol: " + sslContext.getProtocol());
+        System.out.println("========== MTLS REST TEMPLATE READY ==========");
 
         // Required for HttpClient 5.5
         SSLConnectionSocketFactory sslSocketFactory =
