@@ -5,22 +5,27 @@ import java.security.KeyStore;
 
 import javax.net.ssl.SSLContext;
 
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
-import org.apache.hc.client5.http.socket.ConnectionSocketFactory;
-import org.apache.hc.client5.http.socket.PlainConnectionSocketFactory;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.config.Registry;
-import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
+import org.apache.hc.core5.http.ssl.TLS;
 import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.hc.core5.util.Timeout;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+
+import com.example.omsmonitoringdashboard.util.TlsDiagnostics;
 
 @Configuration
 public class RestTemplateConfig {
@@ -38,9 +43,11 @@ public class RestTemplateConfig {
     private String truststorePassword;
 
     private final ResourceLoader resourceLoader;
+    private final TlsDiagnostics tlsDiagnostics;
 
-    public RestTemplateConfig(ResourceLoader resourceLoader) {
+    public RestTemplateConfig(ResourceLoader resourceLoader, TlsDiagnostics tlsDiagnostics) {
         this.resourceLoader = resourceLoader;
+        this.tlsDiagnostics = tlsDiagnostics;
     }
 
     @Bean
@@ -50,11 +57,10 @@ public class RestTemplateConfig {
         System.out.println("Keystore path: " + keystorePath);
         System.out.println("Truststore path: " + truststorePath);
 
-        // Load CLIENT CERTIFICATE (Keystore) - .jks file = JKS type
-        KeyStore keyStore = KeyStore.getInstance("JKS");
-        try (InputStream ksStream = resourceLoader.getResource(keystorePath).getInputStream()) {
-            keyStore.load(ksStream, keystorePassword.toCharArray());
-        }
+        tlsDiagnostics.diagnosticsTruststoreAndKeystore(keystorePath, keystorePassword, truststorePath, truststorePassword);
+
+        KeyStore keyStore = loadKeyStore(keystorePath, keystorePassword, "PKCS12", "JKS");
+        System.out.println("Keystore path: " + keystorePath + " (type=" + keyStore.getType() + ")");
         System.out.println("Keystore loaded successfully. Aliases:");
         var aliases = keyStore.aliases();
         while (aliases.hasMoreElements()) {
@@ -62,39 +68,71 @@ public class RestTemplateConfig {
             System.out.println("  " + alias + " -> isKeyEntry: " + keyStore.isKeyEntry(alias));
         }
 
-        // Load TRUSTSTORE (Server cert) - .p12 file = PKCS12 type
-        KeyStore trustStore = KeyStore.getInstance("PKCS12");
-        try (InputStream tsStream = resourceLoader.getResource(truststorePath).getInputStream()) {
-            trustStore.load(tsStream, truststorePassword.toCharArray());
-        }
+        KeyStore trustStore = loadKeyStore(truststorePath, truststorePassword, "PKCS12", "JKS");
+        System.out.println("Truststore path: " + truststorePath + " (type=" + trustStore.getType() + ")");
         System.out.println("Truststore loaded successfully. Entries: " + trustStore.size());
 
-        // Build SSL Context (mTLS)
         SSLContext sslContext = SSLContexts.custom()
-                .loadKeyMaterial(keyStore, keystorePassword.toCharArray())   // client cert
-                .loadTrustMaterial(trustStore, null)                         // trust server
+                .loadKeyMaterial(keyStore, keystorePassword.toCharArray(),
+                        (aliasesMap, socket) -> aliasesMap.keySet().stream().findFirst().orElse(null))
+                .loadTrustMaterial(trustStore, null)
                 .build();
 
         System.out.println("SSLContext protocol: " + sslContext.getProtocol());
         System.out.println("========== MTLS REST TEMPLATE READY ==========");
 
-        // Required for HttpClient 5.5
-        SSLConnectionSocketFactory sslSocketFactory =
-                new SSLConnectionSocketFactory(sslContext);
-
-        Registry<ConnectionSocketFactory> registry =
-                RegistryBuilder.<ConnectionSocketFactory>create()
-                        .register("https", sslSocketFactory)
-                        .register("http", new PlainConnectionSocketFactory())
-                        .build();
+        TlsSocketStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
+                .setSslContext(sslContext)
+                .setTlsVersions(TLS.V_1_3, TLS.V_1_2)
+                .buildClassic();
 
         PoolingHttpClientConnectionManager connectionManager =
-                new PoolingHttpClientConnectionManager(registry);
+                PoolingHttpClientConnectionManagerBuilder.create()
+                        .setTlsSocketStrategy(tlsStrategy)
+                        .build();
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(Timeout.ofSeconds(15))
+                .setResponseTimeout(Timeout.ofSeconds(30))
+                .setConnectionRequestTimeout(Timeout.ofSeconds(15))
+                .build();
 
         CloseableHttpClient httpClient = HttpClients.custom()
                 .setConnectionManager(connectionManager)
+                .setDefaultRequestConfig(requestConfig)
                 .build();
 
         return new RestTemplate(new HttpComponentsClientHttpRequestFactory(httpClient));
+    }
+
+    private KeyStore loadKeyStore(String path, String password, String... types) throws Exception {
+        Exception lastException = null;
+        org.springframework.core.io.Resource resource = resolveResource(path);
+
+        for (String type : types) {
+            try (InputStream stream = resource.getInputStream()) {
+                KeyStore keyStore = KeyStore.getInstance(type);
+                keyStore.load(stream, password.toCharArray());
+                return keyStore;
+            } catch (Exception e) {
+                lastException = e;
+            }
+        }
+        throw lastException;
+    }
+
+    private org.springframework.core.io.Resource resolveResource(String path) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("Keystore/truststore path must not be null or blank");
+        }
+
+        org.springframework.core.io.Resource resource = resourceLoader.getResource(path);
+        if (!resource.exists()) {
+            java.io.File file = new java.io.File(path);
+            if (file.exists()) {
+                resource = new org.springframework.core.io.FileSystemResource(file);
+            }
+        }
+        return resource;
     }
 }

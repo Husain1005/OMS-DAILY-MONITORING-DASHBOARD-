@@ -3,6 +3,8 @@ package com.example.omsmonitoringdashboard.service;
 import com.example.omsmonitoringdashboard.model.OrderCountRowset;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +18,8 @@ import java.util.List;
 
 @Service
 public class OmsService {
+
+    private static final Logger log = LoggerFactory.getLogger(OmsService.class);
     private final RestTemplate restTemplate;
 
     public OmsService(RestTemplate restTemplate) {
@@ -47,7 +51,9 @@ public class OmsService {
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
         try {
+            log.info("Fetching Titan order count from {}", titanOrderCountUrl);
             ResponseEntity<String> response = restTemplate.exchange(titanOrderCountUrl, HttpMethod.POST, entity, String.class);
+            log.info("Titan order count response status: {}", response.getStatusCodeValue());
             String payload = response.getBody();
             if (payload == null || payload.isBlank()) {
                 throw new RuntimeException("Titan order count response was empty");
@@ -58,6 +64,7 @@ public class OmsService {
             payload = payload.replaceFirst("^\\uFEFF", "");
             return xmlMapper.readValue(payload, OrderCountRowset.class);
         } catch (Exception e) {
+            log.error("Failed to fetch Titan order count", e);
             throw new RuntimeException("Failed to fetch Titan order count: " + e.getMessage(), e);
         }
     }

@@ -4,4 +4,5 @@ com\example\omsmonitoringdashboard\model\OrderCountRowset.class
 com\example\omsmonitoringdashboard\service\OmsService.class
 com\example\omsmonitoringdashboard\config\RestTemplateConfig.class
 com\example\omsmonitoringdashboard\model\OrderCountRow.class
+com\example\omsmonitoringdashboard\util\TlsDiagnostics.class
 com\example\omsmonitoringdashboard\OmsMonitoringDashboardApplication.class
