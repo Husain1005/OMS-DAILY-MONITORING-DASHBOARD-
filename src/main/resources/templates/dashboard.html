@@ -7,9 +7,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; }
-        .card { margin-bottom: 20px; }
+        .card { margin-bottom: 20px; clear: both; }
         .table th { background-color: #007bff; color: white; }
         .last-updated { font-size: 0.9em; color: #6c757d; }
+        .pagination-controls { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; flex-wrap: wrap; gap: 8px; }
+        .pagination-controls select { width: auto; display: inline-block; }
+        .pagination-controls .page-info { font-size: 0.85em; color: #6c757d; }
+        .pagination-controls .btn-sm { min-width: 70px; }
     </style>
 </head>
 <body>
@@ -57,7 +61,7 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header bg-primary text-white">Order Count (From April)</div>
+                    <div class="card-header bg-primary text-white">Order Count</div>
                     <div class="card-body">
                         <table class="table table-striped" id="orderCountTable">
                             <thead><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
@@ -79,21 +83,26 @@
             </div>
         </div>
         
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-warning text-white">Backorder</div>
-                    <div class="card-body">
-                        <p id="backorderSubject"></p>
-                    </div>
+        <div class="card">
+            <div class="card-header bg-warning text-white">Backorder</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="backorderTable">
+                        <thead><tr><th>Order No</th><th>Entry Type</th><th>Item ID</th><th>Brand</th><th>Product Line</th><th>Shipnode</th><th>Description</th><th>Hold Flag</th><th>Order Date</th><th>Status Date</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-danger text-white">Rejected at POS</div>
-                    <div class="card-body">
-                        <p id="rejectedAtPosSubject"></p>
-                    </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-danger text-white">Rejected at POS</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="rejectedAtPosTable">
+                        <thead><tr><th>Order No</th><th>Order Name</th><th>Item ID</th><th>Description</th><th>Status</th><th>Process Type</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -111,10 +120,12 @@
         <div class="card">
             <div class="card-header bg-secondary text-white">Fraud Check Hold Orders</div>
             <div class="card-body">
-                <table class="table table-striped" id="fraudCheckHoldTable">
-                    <thead><tr><th>Order No</th><th>Create TS</th><th>Status TS</th><th>Description</th><th>Hold Flag</th><th>Currency</th><th>Item ID</th><th>Shipnode</th><th>Req Ship Date</th><th>Reason</th><th>Text 1</th><th>Updated By</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="fraudCheckHoldTable">
+                        <thead><tr><th style="white-space:nowrap">Order No</th><th style="white-space:nowrap">CreateTs</th><th>Description</th><th style="white-space:nowrap">HoldFlag</th><th>Currency</th><th style="white-space:nowrap">Item ID</th><th>Shipnode</th><th style="white-space:nowrap">ReqShipDate</th><th>Reason</th><th style="white-space:nowrap">Text 1</th><th style="white-space:nowrap">Created By</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
         
@@ -143,6 +154,112 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let orderCountChart, hmtrOrdersChart, entryTypeChart, fraudCurrencyChart;
+        const tableState = {};
+
+        function getTableValues(tableId, row) {
+            if (tableId === 'orderCountTable') {
+                return [row.shipnodeKey ?? row.shipnode_key ?? '', row.entryType ?? row.entry_type ?? '', row.totalOrders ?? row.from_april ?? ''];
+            } else if (tableId === 'hmtrOrdersTable') {
+                return [row.shipnodeKey ?? row.shipnode_key ?? '', row.entryType ?? row.entry_type ?? '', row.yesterdayCount ?? row.yesterday_count ?? ''];
+            } else if (tableId === 'manualCancellationTable') {
+                return [row.orderNo ?? '', row.entryType ?? '', row.shipmentNo ?? '', row.status ?? '', row.newStatusDate ?? '', row.shipmentStatusDesc ?? '', row.createUserId ?? '', row.createProgId ?? ''];
+            } else if (tableId === 'backorderTable') {
+                return [row.orderNo ?? '', row.entryType ?? '', row.itemId ?? '', row.extnBrand ?? '', row.productLine ?? '', row.shipnodeKey ?? '', row.description ?? '', row.holdFlag ?? '', row.orderDate ?? '', row.statusDate ?? ''];
+            } else if (tableId === 'rejectedAtPosTable') {
+                return [row.orderNo ?? '', row.orderName ?? '', row.itemId ?? '', row.description ?? '', row.status ?? '', row.processTypeKey ?? ''];
+            } else if (tableId === 'fraudCheckHoldTable') {
+                return [row.orderNo ?? '', row.createTs ?? '', row.description ?? '', row.holdFlag ?? '', row.currency ?? '', row.itemId ?? '', row.shipnodeKey ?? '', row.reqShipDate ?? '', row.reasonText ?? '', row.text1 ?? '', row.createUserId ?? ''];
+            } else if (tableId === 'stuckOrdersTable') {
+                return [row.orderNo ?? '', row.orderName ?? '', row.orderDate ?? '', row.createTs ?? '', row.currency ?? '', row.description ?? '', row.holdFlag ?? '', row.itemId ?? '', row.shipnodeKey ?? '', row.reqShipDate ?? '', row.createUserId ?? ''];
+            } else if (tableId === 'egcGcOrdersTable') {
+                return [row.orderNo ?? '', row.itemId ?? '', row.createTs ?? '', row.description ?? '', row.expectedDate ?? ''];
+            } else {
+                return Object.values(row);
+            }
+        }
+
+        function renderPage(tableId) {
+            const state = tableState[tableId];
+            if (!state) return;
+            const { data, page, pageSize } = state;
+            const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+            const start = page * pageSize;
+            const end = Math.min(start + pageSize, data.length);
+            const pageData = data.slice(start, end);
+
+            const tbody = document.querySelector('#' + tableId + ' tbody');
+            tbody.innerHTML = '';
+            pageData.forEach(row => {
+                const tr = document.createElement('tr');
+                const values = getTableValues(tableId, row);
+                values.forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value === null ? '' : value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+
+            const controls = document.getElementById(tableId + '-pagination');
+            if (controls) {
+                controls.querySelector('.page-info').textContent = data.length === 0
+                    ? 'No records'
+                    : `Showing ${start + 1}-${end} of ${data.length}`;
+                controls.querySelector('.btn-prev').disabled = page === 0;
+                controls.querySelector('.btn-next').disabled = page >= totalPages - 1;
+            }
+        }
+
+        function createPaginationControls(tableId) {
+            const table = document.getElementById(tableId);
+            if (document.getElementById(tableId + '-pagination')) return;
+            const div = document.createElement('div');
+            div.className = 'pagination-controls';
+            div.id = tableId + '-pagination';
+            div.innerHTML = `
+                <div>
+                    <label class="me-1">Show</label>
+                    <select class="form-select form-select-sm d-inline-block page-size-select" style="width:75px">
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <label class="ms-1">entries</label>
+                </div>
+                <span class="page-info"></span>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary btn-prev me-1">Prev</button>
+                    <button class="btn btn-sm btn-outline-primary btn-next">Next</button>
+                </div>
+            `;
+            table.parentNode.insertBefore(div, table.nextSibling);
+
+            div.querySelector('.page-size-select').addEventListener('change', function() {
+                tableState[tableId].pageSize = parseInt(this.value);
+                tableState[tableId].page = 0;
+                renderPage(tableId);
+            });
+            div.querySelector('.btn-prev').addEventListener('click', function() {
+                if (tableState[tableId].page > 0) {
+                    tableState[tableId].page--;
+                    renderPage(tableId);
+                }
+            });
+            div.querySelector('.btn-next').addEventListener('click', function() {
+                const s = tableState[tableId];
+                const totalPages = Math.ceil(s.data.length / s.pageSize);
+                if (s.page < totalPages - 1) {
+                    s.page++;
+                    renderPage(tableId);
+                }
+            });
+        }
+
+        function populateTable(tableId, data) {
+            tableState[tableId] = { data, page: 0, pageSize: tableState[tableId]?.pageSize || 20 };
+            createPaginationControls(tableId);
+            renderPage(tableId);
+        }
 
         async function fetchData(endpoint, tableId, isTable = true) {
             try {
@@ -164,38 +281,6 @@
                 console.error('Error fetching ' + endpoint, error);
                 return null;
             }
-        }
-
-        function populateTable(tableId, data) {
-            const tbody = document.querySelector('#' + tableId + ' tbody');
-            tbody.innerHTML = '';
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                let values;
-
-                if (tableId === 'orderCountTable') {
-                    values = [
-                        row.shipnodeKey ?? row.shipnode_key ?? '',
-                        row.entryType ?? row.entry_type ?? '',
-                        row.totalOrders ?? row.from_april ?? ''
-                    ];
-                } else if (tableId === 'hmtrOrdersTable') {
-                    values = [
-                        row.shipnodeKey ?? row.shipnode_key ?? '',
-                        row.entryType ?? row.entry_type ?? '',
-                        row.yesterday_count ?? row.totalOrders ?? ''
-                    ];
-                } else {
-                    values = Object.values(row);
-                }
-
-                values.forEach(value => {
-                    const td = document.createElement('td');
-                    td.textContent = value === null ? '' : value;
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
         }
 
         function buildAggregation(items, keyField, valueField, countMode = false) {
@@ -271,13 +356,13 @@
         async function fetchAll() {
             const [orderCountData, hmtrData, backorderData, rejectedData, manualCancellationData, fraudData, stuckOrdersData, egcGcOrdersData] = await Promise.all([
                 fetchData('titan/order-count', 'orderCountTable'),
-                fetchData('hmtr-orders', 'hmtrOrdersTable'),
-                fetchData('backorder', 'backorderSubject', false),
-                fetchData('rejected-at-pos', 'rejectedAtPosSubject', false),
-                fetchData('manual-cancellation', 'manualCancellationTable'),
-                fetchData('fraud-check-hold', 'fraudCheckHoldTable'),
-                fetchData('stuck-orders', 'stuckOrdersTable'),
-                fetchData('egc-gc-orders', 'egcGcOrdersTable')
+                fetchData('titan/hmtr-orders', 'hmtrOrdersTable'),
+                fetchData('titan/backorder', 'backorderTable'),
+                fetchData('titan/rejected-at-pos', 'rejectedAtPosTable'),
+                fetchData('titan/manual-cancellation', 'manualCancellationTable'),
+                fetchData('titan/fraud-hold', 'fraudCheckHoldTable'),
+                fetchData('titan/stuck-order', 'stuckOrdersTable'),
+                fetchData('titan/egc-gc-orders', 'egcGcOrdersTable')
             ]);
 
             renderCharts(orderCountData, hmtrData, fraudData);
