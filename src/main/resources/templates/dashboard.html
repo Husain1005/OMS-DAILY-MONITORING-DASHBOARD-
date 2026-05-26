@@ -6,148 +6,444 @@
     <title>OMS Daily Monitoring Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .card { margin-bottom: 20px; clear: both; }
-        .table th { background-color: #007bff; color: white; }
-        .last-updated { font-size: 0.9em; color: #6c757d; }
-        .pagination-controls { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; flex-wrap: wrap; gap: 8px; }
-        .pagination-controls select { width: auto; display: inline-block; }
-        .pagination-controls .page-info { font-size: 0.85em; color: #6c757d; }
-        .pagination-controls .btn-sm { min-width: 70px; }
+        :root {
+            --bg-body: #f1f5f9;
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --text-muted: #6b7280;
+            --card-border: rgba(148, 163, 184, 0.18);
+            --primary-soft: #4f46e5;
+            --success-soft: #059669;
+            --warning-soft: #d97706;
+            --danger-soft: #dc2626;
+            --info-soft: #0ea5e9;
+        }
+        body {
+            background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+            min-height: 100vh;
+            color: #111827;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .dashboard-top {
+            margin-top: 1.25rem;
+            margin-bottom: 1.75rem;
+        }
+        .hero-card {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.08);
+            border-radius: 24px;
+        }
+        .hero-card h1 {
+            font-size: clamp(2rem, 2.75vw, 2.6rem);
+            margin-bottom: 0.25rem;
+        }
+        .hero-card p {
+            margin-bottom: 0;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+        .metric-card {
+            min-height: 130px;
+            border: 0;
+            border-radius: 1.25rem;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        }
+        .metric-card.clickable {
+            cursor: pointer;
+        }
+        .metric-card.clickable:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+            background: rgba(79, 70, 229, 0.02);
+        }
+        .metric-card .card-body {
+            padding: 1.3rem;
+        }
+        .metric-card .metric-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .metric-card .metric-label {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-size: 0.78rem;
+            margin-top: 0.5rem;
+        }
+        .card {
+            border: 1px solid var(--card-border);
+            border-radius: 1.25rem;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+        }
+        .card-header {
+            border-radius: 1.25rem 1.25rem 0 0;
+            background: linear-gradient(135deg, #111827, #0f172a);
+            color: #ffffff;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .card-body {
+            background: var(--surface);
+        }
+        .table {
+            margin-bottom: 0;
+            color: #334155;
+            font-size: 0.92rem;
+            border-collapse: separate;
+            border-spacing: 0 0.6rem;
+        }
+        .table thead th {
+            border-bottom-width: 2px;
+            background: linear-gradient(135deg, #1f2937, #111827);
+            color: #ffffff;
+            vertical-align: middle;
+            font-size: 0.92rem;
+            letter-spacing: 0.02em;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        .table tbody tr {
+            background: #ffffff;
+            border-radius: 0.9rem;
+            box-shadow: inset 0 -1px 0 rgba(15, 23, 42, 0.04);
+        }
+        .table tbody tr td {
+            border: none;
+            padding: 0.95rem 0.9rem;
+            vertical-align: middle;
+        }
+        .table tbody tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background: #f8fafc;
+        }
+        .table-striped tbody tr:nth-of-type(even) {
+            background: #ffffff;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.12);
+        }
+        .last-updated {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        .refresh-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.92rem;
+            color: #111827;
+        }
+        .summary-label {
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .section-heading {
+            margin-bottom: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .chart-card {
+            min-height: 320px;
+        }
+        .chart-card canvas {
+            max-height: 320px;
+        }
+        .table-header-row th {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .table-responsive {
+            border-radius: 1rem;
+            overflow-x: auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: 440px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            background: rgba(255,255,255,0.96);
+            position: relative;
+        }
+        .table-responsive table {
+            width: max-content;
+            min-width: 100%;
+            table-layout: auto;
+        }
+        .table-responsive::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.18);
+            border-radius: 999px;
+        }
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+            padding: 0.75rem 0;
+            position: relative;
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(8px);
+            box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.15);
+            z-index: 5;
+        }
+        .pagination-controls .page-info {
+            flex: 1;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .pagination-controls .btn-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .pagination-controls .btn-prev,
+        .pagination-controls .btn-next {
+            min-width: 90px;
+        }
+        @media (max-width: 767px) {
+            .metric-card { min-height: 120px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">OMS Daily Monitoring Dashboard</h1>
-        <div class="last-updated text-center" id="lastUpdated">Last updated: Loading...</div>
-        
-        <div class="row mb-4">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">Order Count by Shipnode</div>
-                    <div class="card-body">
-                        <canvas id="orderCountChart" height="220"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header bg-success text-white">HMTR Orders by Shipnode</div>
-                    <div class="card-body">
-                        <canvas id="hmtrOrdersChart" height="220"></canvas>
-                    </div>
-                </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="#">OMS Monitoring Dashboard</a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-primary">Daily Report</span>
+                <span class="last-updated" id="lastUpdated">Last updated: Loading...</span>
             </div>
         </div>
-        <div class="row mb-4">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header bg-info text-white">Order Count by Entry Type</div>
-                    <div class="card-body">
-                        <canvas id="entryTypeChart" height="220"></canvas>
-                    </div>
+    </nav>
+
+    <div class="container-fluid px-4 py-4">
+        <div class="hero-card p-4 mb-4">
+            <div class="row align-items-center gy-3">
+                <div class="col-lg-8">
+                    <h1>OMS Daily Monitoring Dashboard</h1>
+                    <p>Review key OMS metrics and exception reports from IBM Sterling/Titan in a single operational dashboard.</p>
                 </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header bg-secondary text-white">Fraud Hold Orders by Currency</div>
-                    <div class="card-body">
-                        <canvas id="fraudCurrencyChart" height="220"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">Order Count</div>
-                    <div class="card-body">
-                        <table class="table table-striped" id="orderCountTable">
-                            <thead><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-success text-white">HMTR Orders (Yesterday)</div>
-                    <div class="card-body">
-                        <table class="table table-striped" id="hmtrOrdersTable">
-                            <thead><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header bg-warning text-white">Backorder</div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="backorderTable">
-                        <thead><tr><th>Order No</th><th>Entry Type</th><th>Item ID</th><th>Brand</th><th>Product Line</th><th>Shipnode</th><th>Description</th><th>Hold Flag</th><th>Order Date</th><th>Status Date</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
+                <div class="col-lg-4 text-lg-end">
+                    <button id="refreshButton" class="btn btn-outline-primary btn-lg">Refresh Data</button>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header bg-danger text-white">Rejected at POS</div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="rejectedAtPosTable">
-                        <thead><tr><th>Order No</th><th>Order Name</th><th>Item ID</th><th>Description</th><th>Status</th><th>Process Type</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card metric-card clickable border-start border-4 border-primary" data-scroll-to="orderCountSection">
+                    <div class="card-body">
+                        <div class="metric-label">Total Orders</div>
+                        <div id="metricTotalOrders" class="metric-value">0</div>
+                        <div class="text-muted">Order count report total</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card metric-card clickable border-start border-4 border-success" data-scroll-to="hmtrOrdersSection">
+                    <div class="card-body">
+                        <div class="metric-label">HMTR Orders</div>
+                        <div id="metricHmtrOrders" class="metric-value">0</div>
+                        <div class="text-muted">Yesterday's HMTR orders</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card metric-card clickable border-start border-4 border-warning" data-scroll-to="backorderSection">
+                    <div class="card-body">
+                        <div class="metric-label">Backorders</div>
+                        <div id="metricBackorders" class="metric-value">0</div>
+                        <div class="text-muted">Active backorder records</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card metric-card clickable border-start border-4 border-danger" data-scroll-to="fraudSection">
+                    <div class="card-body">
+                        <div class="metric-label">Fraud Hold</div>
+                        <div id="metricFraudHolds" class="metric-value">0</div>
+                        <div class="text-muted">Fraud hold order count</div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-header bg-info text-white">Manual Cancellation</div>
-            <div class="card-body">
-                <table class="table table-striped" id="manualCancellationTable">
-                    <thead><tr><th>Order No</th><th>Entry Type</th><th>Shipment No</th><th>Status</th><th>Status Date</th><th>Description</th><th>User</th><th>Program</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card chart-card">
+                    <div class="card-header">Order Count by Shipnode</div>
+                    <div class="card-body p-3">
+                        <canvas id="orderCountChart"></canvas>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header bg-secondary text-white">Fraud Check Hold Orders</div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped" id="fraudCheckHoldTable">
-                        <thead><tr><th style="white-space:nowrap">Order No</th><th style="white-space:nowrap">CreateTs</th><th>Description</th><th style="white-space:nowrap">HoldFlag</th><th>Currency</th><th style="white-space:nowrap">Item ID</th><th>Shipnode</th><th style="white-space:nowrap">ReqShipDate</th><th>Reason</th><th style="white-space:nowrap">Text 1</th><th style="white-space:nowrap">Created By</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
+            <div class="col-lg-6">
+                <div class="card chart-card">
+                    <div class="card-header">HMTR Orders by Shipnode</div>
+                    <div class="card-body p-3">
+                        <canvas id="hmtrOrdersChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-header bg-dark text-white">Stuck Orders (No Holds)</div>
-            <div class="card-body">
-                <table class="table table-striped" id="stuckOrdersTable">
-                    <thead><tr><th>Order No</th><th>Order Name</th><th>Order Date</th><th>Create TS</th><th>Currency</th><th>Description</th><th>Hold Flag</th><th>Item ID</th><th>Shipnode</th><th>Req Ship Date</th><th>Updated By</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card chart-card">
+                    <div class="card-header">Order Count by Entry Type</div>
+                    <div class="card-body p-3">
+                        <canvas id="entryTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card chart-card">
+                    <div class="card-header">Fraud Hold Orders by Currency</div>
+                    <div class="card-body p-3">
+                        <canvas id="fraudCurrencyChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-header bg-light text-dark">EGC and GC Orders</div>
-            <div class="card-body">
-                <table class="table table-striped" id="egcGcOrdersTable">
-                    <thead><tr><th>Order No</th><th>Item ID</th><th>Create TS</th><th>Description</th><th>Scheduled Date</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+
+        <section id="orderCountSection" class="row g-4 mb-4">
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header">Order Count</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="orderCountTable">
+                                <thead class="table-header-row"><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header">HMTR Orders (Yesterday)</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="hmtrOrdersTable">
+                                <thead class="table-header-row"><tr><th>Shipnode Key</th><th>Entry Type</th><th>Count</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="backorderSection" class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">Backorder Report</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="backorderTable">
+                                <thead class="table-header-row"><tr><th>Order No</th><th>Entry Type</th><th>Item ID</th><th>Brand</th><th>Product Line</th><th>Shipnode</th><th>Description</th><th>Hold Flag</th><th>Order Date</th><th>Status Date</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="fraudSection" class="row g-4 mb-4">
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header">Rejected at POS</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="rejectedAtPosTable">
+                                <thead class="table-header-row"><tr><th>Order No</th><th>Order Name</th><th>Item ID</th><th>Description</th><th>Status</th><th>Process Type</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header">Manual Cancellation</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="manualCancellationTable">
+                                <thead class="table-header-row"><tr><th>Order No</th><th>Entry Type</th><th>Shipment No</th><th>Status</th><th>Status Date</th><th>Description</th><th>User</th><th>Program</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="fraudSection" class="row g-4 mb-4">
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header">Fraud Check Hold Orders</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="fraudCheckHoldTable">
+                                <thead class="table-header-row"><tr><th>Order No</th><th>CreateTs</th><th>Description</th><th>HoldFlag</th><th>Currency</th><th>Item ID</th><th>Shipnode</th><th>ReqShipDate</th><th>Reason</th><th>Text 1</th><th>Created By</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-header">Stuck Orders (No Holds)</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="stuckOrdersTable">
+                                <thead class="table-header-row"><tr><th>Order No</th><th>Order Name</th><th>Order Date</th><th>Create TS</th><th>Currency</th><th>Description</th><th>Hold Flag</th><th>Item ID</th><th>Shipnode</th><th>Req Ship Date</th><th>Updated By</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="egcGcSection" class="row g-4 mb-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">EGC & GC Orders</div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="egcGcOrdersTable">
+                                <thead class="table-header-row"><tr><th>Order No</th><th>Item ID</th><th>Create TS</th><th>Description</th><th>Scheduled Date</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -227,12 +523,17 @@
                     <label class="ms-1">entries</label>
                 </div>
                 <span class="page-info"></span>
-                <div>
-                    <button class="btn btn-sm btn-outline-primary btn-prev me-1">Prev</button>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary btn-prev">Prev</button>
                     <button class="btn btn-sm btn-outline-primary btn-next">Next</button>
                 </div>
             `;
-            table.parentNode.insertBefore(div, table.nextSibling);
+            const wrapper = table.parentNode;
+            if (wrapper && wrapper.classList.contains('table-responsive')) {
+                wrapper.parentNode.insertBefore(div, wrapper.nextSibling);
+            } else {
+                table.parentNode.insertBefore(div, table.nextSibling);
+            }
 
             div.querySelector('.page-size-select').addEventListener('change', function() {
                 tableState[tableId].pageSize = parseInt(this.value);
@@ -353,6 +654,18 @@
             }
         }
 
+        function updateSummaryCards(orderCountData, hmtrData, backorderData, fraudData) {
+            const orderCountTotal = orderCountData ? orderCountData.reduce((sum, row) => sum + Number(row.totalOrders || row.from_april || 0), 0) : 0;
+            const hmtrTotal = hmtrData ? hmtrData.reduce((sum, row) => sum + Number(row.yesterdayCount || row.yesterday_count || 0), 0) : 0;
+            const backorderCount = backorderData ? backorderData.length : 0;
+            const fraudHoldCount = fraudData ? fraudData.length : 0;
+
+            document.getElementById('metricTotalOrders').textContent = orderCountTotal.toLocaleString();
+            document.getElementById('metricHmtrOrders').textContent = hmtrTotal.toLocaleString();
+            document.getElementById('metricBackorders').textContent = backorderCount.toLocaleString();
+            document.getElementById('metricFraudHolds').textContent = fraudHoldCount.toLocaleString();
+        }
+
         async function fetchAll() {
             const [orderCountData, hmtrData, backorderData, rejectedData, manualCancellationData, fraudData, stuckOrdersData, egcGcOrdersData] = await Promise.all([
                 fetchData('titan/order-count', 'orderCountTable'),
@@ -366,8 +679,37 @@
             ]);
 
             renderCharts(orderCountData, hmtrData, fraudData);
+            updateSummaryCards(orderCountData, hmtrData, backorderData, fraudData);
             document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
         }
+
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            document.getElementById('refreshButton').disabled = true;
+            document.getElementById('refreshButton').textContent = 'Refreshing...';
+            fetchAll().finally(() => {
+                document.getElementById('refreshButton').disabled = false;
+                document.getElementById('refreshButton').textContent = 'Refresh Data';
+            });
+        });
+
+        // Add click event listeners to clickable metric cards
+        document.querySelectorAll('.metric-card.clickable').forEach(card => {
+            card.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-scroll-to');
+                if (targetId) {
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            });
+            card.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
 
         fetchAll();
         setInterval(fetchAll, 300000); // 5 minutes
